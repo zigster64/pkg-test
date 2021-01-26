@@ -23,18 +23,22 @@ pub fn build(b: *Builder) void {
     exe.setTarget(target);
     exe.setBuildMode(mode);
 
-    // use the bundled
-    //const sqlite = b.addStaticLibrary("sqlite", null);
-    //sqlite.addCSourceFile("libs/zig-sqlite/sqlite3.c", &[_][]const u8{"-std=c99"});
-    //sqlite.addIncludeDir("libs/zig-sqlite");
-    //sqlite.linkLibC();
-    //exe.linkLibC();
-    //exe.linkLibrary(sqlite);
+    const bundled = b.option(bool, "bundled", "bundle the sqlite code statically");
 
-    // use DLL
-    exe.linkLibC();
-    exe.linkSystemLibrary("sqlite3");
-    exe.addIncludeDir("libs/zig-sqlite");
+    // use the bundled
+    if (bundled) |static| {
+        const sqlite = b.addStaticLibrary("sqlite", null);
+        sqlite.addCSourceFile("libs/zig-sqlite/sqlite3.c", &[_][]const u8{"-std=c99"});
+        sqlite.addIncludeDir("libs/zig-sqlite");
+        sqlite.linkLibC();
+        exe.linkLibC();
+        exe.linkLibrary(sqlite);
+    } else {
+        // use DLL
+        exe.linkLibC();
+        exe.linkSystemLibrary("sqlite3");
+        exe.addIncludeDir("libs/zig-sqlite");
+    }
 
     exe.addPackage(.{ .name = "sqlite", .path = "libs/zig-sqlite/sqlite.zig" });
 
